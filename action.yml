@@ -13,7 +13,7 @@ inputs:
     description: "Whether to cache the Poetry installation, dependencies and pre-commit"
     required: false
     default: true
-  skip-precommit:
+  skip-pre-commit:
     description: "Whether to skip installing pre-commit"
     required: false
     default: false
@@ -31,41 +31,46 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     - name: Try loading cached Poetry installation
-      id: cached-poetry
-      if: ${{ inputs.use-cache }}
+      id: cache-poetry
+      if: ${{ inputs.use-cache == 'true' && runner.os != 'Windows' }}
       uses: actions/cache@v3
       with:
         path: ~/.local
         key: poetry-${{ runner.os }}
 
     - name: Install Poetry
-      if: ${{ !inputs.use-cache || !steps.cached-poetry.outputs.cache-hit }}
+      id: install-poetry
+      if: ${{ steps.cache-poetry.outcome == 'skipped' || steps.cache-poetry.outputs.cache-hit != 'true' }}
       uses: snok/install-poetry@v1
       with:
         virtualenvs-in-project: true
 
+    - name: Add Poetry to PATH
+      run: echo "$HOME/.local/bin" >> $GITHUB_PATH && export PATH="$HOME/.local/bin:$PATH"
+      shell: bash
+
     - name: Load cached venv
-      id: cached-poetry-dependencies
-      if: ${{ runner.os != 'Windows' }}
+      id: cache-deps
+      if: ${{ inputs.use-cache == 'true' && runner.os != 'Windows' }}
       uses: actions/cache@v3
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
     - name: Install dependencies
-      if: ${{ runner.os == 'Windows' || !steps.cached-poetry-dependencies.outputs.cache-hit }}
+      if: ${{ steps.cache-deps.outcome == 'skipped' || steps.cache-deps.outputs.cache-hit != 'true'}}
       run: poetry install --no-interaction
       shell: bash
 
     - name: Try loading Pre-commit cache
-      id: cached-pre-commit
-      if: ${{ inputs.use-cache && !inputs.skip-precommit }}
+      id: cache-pre-commit
+      if: ${{ inputs.use-cache == 'true' && inputs.skip-pre-commit == 'false' }}
       uses: actions/cache@v3
       with:
         path: ~/.cache/pre-commit
         key: pre-commit-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
 
     - name: Install pre-commit
-      if: ${{ !inputs.skip-precommit }}
+      if: ${{ inputs.skip-pre-commit == 'false' }}
       run: poetry run pre-commit install --install-hooks
       shell: bash

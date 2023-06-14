@@ -3,7 +3,7 @@
   <a href="LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/Qwerty-133/python-setup">
   </a>
-  <a href="https://github.com/Qwerty-133/python-setup/releases/latest>
+  <a href="https://github.com/Qwerty-133/python-setup/releases/latest">
     <img alt="Release" src="https://img.shields.io/github/v/release/Qwerty-133/python-setup">
   </a>
 </p>
@@ -39,10 +39,11 @@ To source the venv, add this to your workflow:
   run: source $VENV
 ```
 
+> Also see [#windows](#windows) if you are using Windows runners.
+
 ## Cache
 
 This action caches the Poetry installation, it's venv, and pre-commit hooks.
-On Windows runners, the venv is not cached since it doesn't work as expected.
 
 To disable the cache entirely, the use-cache input can be set to false.
 
@@ -71,6 +72,18 @@ To skip installing pre-commit, the skip-precommit input can be set to true.
     python-version: 3.11
     skip-precommit: true
 ```
+
+## Windows
+
+You must set the default shell to be bash, by adding the following in your workflow.
+
+```yaml
+defaults:
+  run:
+    shell: bash
+```
+
+On Windows runners, only pre-commit hooks are cached, since caching the Poetry installation and venv is problematic.
 
 ## Credits
 
