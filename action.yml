@@ -1,0 +1,71 @@
+name: Python Environment Setup
+description: Installs Python, Poetry, dependencies and pre-commit.
+
+branding:
+  icon: 'code'
+  color: 'orange'
+
+inputs:
+  python-version:
+    description: "Python version to use"
+    required: true
+  use-cache:
+    description: "Whether to cache the Poetry installation, dependencies and pre-commit"
+    required: false
+    default: true
+  skip-precommit:
+    description: "Whether to skip installing pre-commit"
+    required: false
+    default: false
+
+runs:
+  using: "composite"
+
+  steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      id: setup-python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Try loading cached Poetry installation
+      id: cached-poetry
+      if: ${{ inputs.use-cache }}
+      uses: actions/cache@v3
+      with:
+        path: ~/.local
+        key: poetry-${{ runner.os }}
+
+    - name: Install Poetry
+      if: ${{ !inputs.use-cache || !steps.cached-poetry.outputs.cache-hit }}
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-in-project: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      if: ${{ runner.os != 'Windows' }}
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      if: ${{ runner.os == 'Windows' || !steps.cached-poetry-dependencies.outputs.cache-hit }}
+      run: poetry install --no-interaction
+      shell: bash
+
+    - name: Try loading Pre-commit cache
+      id: cached-pre-commit
+      if: ${{ inputs.use-cache && !inputs.skip-precommit }}
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+    - name: Install pre-commit
+      if: ${{ !inputs.skip-precommit }}
+      run: poetry run pre-commit install --install-hooks
+      shell: bash
