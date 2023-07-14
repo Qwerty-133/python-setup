@@ -24,7 +24,7 @@ This action caches heavily, to speed up your workflow. It is a composite action 
 - name: Setup the Python Environment
   uses: Qwerty-133/python-setup@v1
   with:
-    python-version: 3.11
+    python-version: '3.11'
 ```
 
 The python-version input is required, however the action automatically chooses the latest Poetry version.
@@ -51,7 +51,7 @@ To disable the cache entirely, the use-cache input can be set to false.
 - name: Setup the Python Environment
   uses: Qwerty-133/python-setup@v1
   with:
-    python-version: 3.11
+    python-version: '3.11'
     use-cache: false
 ```
 
@@ -69,7 +69,7 @@ To skip installing pre-commit, the skip-precommit input can be set to true.
 - name: Setup the Python Environment
   uses: Qwerty-133/python-setup@v1
   with:
-    python-version: 3.11
+    python-version: '3.11'
     skip-precommit: true
 ```
 
